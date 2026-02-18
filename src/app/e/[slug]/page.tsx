@@ -17,19 +17,23 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const event = await getEventBySlug(slug);
-  if (!event) return { title: "Event Not Found" };
+  try {
+    const { slug } = await params;
+    const event = await getEventBySlug(slug);
+    if (!event) return { title: "Event Not Found" };
 
-  return {
-    title: event.title,
-    description: `${event.user.name} has created a gift registry. View their wishlist and claim a gift!`,
-    openGraph: {
-      title: `${event.title} | Wishly`,
-      description: `Gift registry by ${event.user.name}. Browse and claim gifts!`,
-      images: event.coverImage ? [event.coverImage] : [],
-    },
-  };
+    return {
+      title: event.title,
+      description: `${event.user.name} has created a gift registry. View their wishlist and claim a gift!`,
+      openGraph: {
+        title: `${event.title} | Wishly`,
+        description: `Gift registry by ${event.user.name}. Browse and claim gifts!`,
+        images: event.coverImage ? [event.coverImage] : [],
+      },
+    };
+  } catch {
+    return { title: "Gift Registry | Wishly" };
+  }
 }
 
 export default async function PublicEventPage({
@@ -56,8 +60,13 @@ export default async function PublicEventPage({
     );
   }
 
-  const session = await auth();
-  const currentUserId = session?.user?.id;
+  let currentUserId: string | undefined;
+  try {
+    const session = await auth();
+    currentUserId = session?.user?.id;
+  } catch {
+    // Auth failed silently - treat as unauthenticated
+  }
   const isHost = currentUserId === event.userId;
   const claimedCount = event.gifts.filter((g) => g.isClaimed).length;
 

@@ -21,9 +21,13 @@ export const metadata: Metadata = {
   },
   description:
     "Create gift lists your guests will actually use. No duplicates, no guessing, no awkward budget mismatches.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  ),
+  metadataBase: (() => {
+    try {
+      return new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+    } catch {
+      return new URL("http://localhost:3000");
+    }
+  })(),
   openGraph: {
     title: "Wishly - Gift Registry Made Simple",
     description:

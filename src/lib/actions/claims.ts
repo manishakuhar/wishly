@@ -8,7 +8,6 @@ import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/services/notifications";
 import { sendGiftClaimedEmail, sendClaimConfirmationEmail } from "@/lib/services/email";
-import { generateShareUrl } from "@/lib/utils";
 
 export async function claimGift(giftId: string, formData: FormData) {
   const session = await auth();
