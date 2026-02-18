@@ -1,8 +1,11 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = "Wishly <onboarding@resend.dev>";
+
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function sendGiftClaimedEmail({
   hostEmail,
@@ -22,6 +25,8 @@ export async function sendGiftClaimedEmail({
   message?: string | null;
 }) {
   try {
+    const resend = getResendClient();
+    if (!resend) return;
     await resend.emails.send({
       from: FROM_EMAIL,
       to: hostEmail,
@@ -56,6 +61,8 @@ export async function sendClaimConfirmationEmail({
   giftLink?: string | null;
 }) {
   try {
+    const resend = getResendClient();
+    if (!resend) return;
     await resend.emails.send({
       from: FROM_EMAIL,
       to: guestEmail,

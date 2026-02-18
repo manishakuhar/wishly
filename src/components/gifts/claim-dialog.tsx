@@ -46,13 +46,15 @@ export function ClaimDialog({
   async function handleClaim(formData: FormData) {
     setLoading(true);
     try {
-      await claimGift(giftId, formData);
-      setClaimed(true);
-      toast.success("Gift claimed!");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to claim gift"
-      );
+      const result = await claimGift(giftId, formData);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        setClaimed(true);
+        toast.success("Gift claimed!");
+      }
+    } catch {
+      toast.error("Failed to claim gift. Please try again.");
     } finally {
       setLoading(false);
     }

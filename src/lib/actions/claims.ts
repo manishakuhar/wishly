@@ -12,7 +12,7 @@ import { generateShareUrl } from "@/lib/utils";
 
 export async function claimGift(giftId: string, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Please sign in to claim a gift" };
 
   const gift = await db.query.gifts.findFirst({
     where: eq(gifts.id, giftId),
@@ -26,11 +26,11 @@ export async function claimGift(giftId: string, formData: FormData) {
     },
   });
 
-  if (!gift) throw new Error("Gift not found");
+  if (!gift) return { error: "Gift not found" };
   if (gift.event.userId === session.user.id) {
-    throw new Error("You cannot claim your own gift");
+    return { error: "You cannot claim your own gift" };
   }
-  if (gift.isClaimed) throw new Error("This gift has already been claimed");
+  if (gift.isClaimed) return { error: "This gift has already been claimed" };
 
   const raw = {
     message: (formData.get("message") as string) || undefined,
@@ -55,9 +55,9 @@ export async function claimGift(giftId: string, formData: FormData) {
       error instanceof Error &&
       error.message.includes("unique")
     ) {
-      throw new Error("This gift was just claimed by someone else");
+      return { error: "This gift was just claimed by someone else" };
     }
-    throw error;
+    return { error: "Something went wrong. Please try again." };
   }
 
   // Send notifications (fire-and-forget, don't block the response)
@@ -79,7 +79,7 @@ export async function claimGift(giftId: string, formData: FormData) {
       giftName: gift.name,
       claimerName,
       eventTitle: gift.event.title,
-      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/events/${gift.event.id}`,
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/events/${gift.event.id}`,
       message: validated.message,
     }).catch(() => {});
   }
@@ -97,17 +97,19 @@ export async function claimGift(giftId: string, formData: FormData) {
   revalidatePath(`/e/${gift.event.slug}`);
   revalidatePath(`/events/${gift.event.id}`);
   revalidatePath("/dashboard");
+
+  return { success: true };
 }
 
 export async function unclaimGift(giftId: string) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Please sign in" };
 
   const claim = await db.query.claims.findFirst({
     where: and(eq(claims.giftId, giftId), eq(claims.userId, session.user.id)),
   });
 
-  if (!claim) throw new Error("Claim not found");
+  if (!claim) return { error: "Claim not found" };
 
   const gift = await db.query.gifts.findFirst({
     where: eq(gifts.id, giftId),
@@ -127,4 +129,6 @@ export async function unclaimGift(giftId: string) {
     revalidatePath(`/events/${gift.event.id}`);
   }
   revalidatePath("/dashboard");
+
+  return { success: true };
 }
